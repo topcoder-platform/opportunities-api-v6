@@ -16,6 +16,7 @@ const runtimeConfiguration = {
   summaryRateLimit: 60,
   summaryRateTtlMs: 60000,
   summaryTimeoutMs: 12000,
+  trustProxyHops: 1,
 };
 
 const publicChallengeWhere = {

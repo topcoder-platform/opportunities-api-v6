@@ -57,6 +57,17 @@ settings below. Rate-limit state is process-local, so multi-replica deployments
 should use an ingress or shared store when a globally consistent quota is
 required.
 
+The throttler keys clients using Express `request.ip`. At startup the service
+configures an exact trusted-proxy hop count so requests arriving through an ALB,
+API gateway, or ingress use the forwarded client address instead of collapsing
+onto the edge address. The default trusts one immediate proxy hop. This assumes
+the origin is reachable only through that trusted edge and that the edge
+replaces or safely appends forwarding headers. Do not expose the origin directly
+to untrusted clients with proxy trust enabled, because a direct client could
+forge its forwarded address and evade per-IP throttling. Set the hop count to
+the exact fixed trusted topology: too few hops can merge clients, while too many
+can trust client-supplied addresses.
+
 ## Configuration and lifecycle
 
 Copy `.env.example` to `.env`, then configure four distinct PostgreSQL URLs:
@@ -68,6 +79,8 @@ Copy `.env.example` to `.env`, then configure four distinct PostgreSQL URLs:
 
 Optional positive-integer runtime settings are:
 
+- `TRUST_PROXY_HOPS` (default `1`, the immediate trusted edge between clients
+  and this process)
 - `SUMMARY_CACHE_TTL_MS` (default `15000`)
 - `SUMMARY_JOIN_ROW_LIMIT` (default `10000`)
 - `SUMMARY_RATE_LIMIT` (default `60`)

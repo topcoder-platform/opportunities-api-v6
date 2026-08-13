@@ -11,6 +11,7 @@ describe("loadRuntimeConfiguration", () => {
       summaryRateLimit: RUNTIME_DEFAULTS.summaryRateLimit,
       summaryRateTtlMs: RUNTIME_DEFAULTS.summaryRateTtlMs,
       summaryTimeoutMs: RUNTIME_DEFAULTS.summaryTimeoutMs,
+      trustProxyHops: RUNTIME_DEFAULTS.trustProxyHops,
     });
   });
 
@@ -25,6 +26,7 @@ describe("loadRuntimeConfiguration", () => {
         SUMMARY_RATE_LIMIT: "30",
         SUMMARY_RATE_TTL_MS: "45000",
         SUMMARY_TIMEOUT_MS: "7000",
+        TRUST_PROXY_HOPS: "2",
       }),
     ).toEqual({
       databaseConnectTimeoutMs: 2000,
@@ -35,6 +37,7 @@ describe("loadRuntimeConfiguration", () => {
       summaryRateLimit: 30,
       summaryRateTtlMs: 45000,
       summaryTimeoutMs: 7000,
+      trustProxyHops: 2,
     });
   });
 
@@ -44,6 +47,15 @@ describe("loadRuntimeConfiguration", () => {
       expect(() =>
         loadRuntimeConfiguration({ SUMMARY_CACHE_TTL_MS: value }),
       ).toThrow("SUMMARY_CACHE_TTL_MS must be a positive integer.");
+    },
+  );
+
+  it.each(["0", "-1", "1.5", "not-a-number"])(
+    "rejects invalid TRUST_PROXY_HOPS=%s",
+    (value) => {
+      expect(() =>
+        loadRuntimeConfiguration({ TRUST_PROXY_HOPS: value }),
+      ).toThrow("TRUST_PROXY_HOPS must be a positive integer.");
     },
   );
 });

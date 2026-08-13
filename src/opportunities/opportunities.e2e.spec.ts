@@ -1,17 +1,19 @@
-import { INestApplication, ServiceUnavailableException } from "@nestjs/common";
+import { ServiceUnavailableException } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
+import { NestExpressApplication } from "@nestjs/platform-express";
 import { Test, TestingModule } from "@nestjs/testing";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import request from "supertest";
 import type { Server } from "node:http";
 
+import { configureTrustProxy } from "../config/trust-proxy.config";
 import { HealthController } from "../health.controller";
 import { OpportunitiesController } from "./opportunities.controller";
 import { OpportunitiesSummaryService } from "./opportunities-summary.service";
 
 describe("Opportunities HTTP contract", () => {
-  let application: INestApplication;
+  let application: NestExpressApplication;
   const summary = {
     cells: {
       competitions: { amount: 38500, count: 12 },
@@ -65,7 +67,9 @@ describe("Opportunities HTTP contract", () => {
       ],
     }).compile();
 
-    application = moduleFixture.createNestApplication();
+    application =
+      moduleFixture.createNestApplication<NestExpressApplication>();
+    configureTrustProxy(application, 1);
     application.setGlobalPrefix("v6/opportunities");
     await application.init();
   });
@@ -116,6 +120,27 @@ describe("Opportunities HTTP contract", () => {
         .expect(200)
         .expect({ status: "ok" });
     }
+  });
+
+  it("keeps throttling keys separate for clients behind the trusted edge", async () => {
+    const firstClient = "198.51.100.10";
+    const secondClient = "198.51.100.11";
+
+    for (let requestNumber = 0; requestNumber < 2; requestNumber += 1) {
+      await request(getHttpServer())
+        .get("/v6/opportunities/summary")
+        .set("X-Forwarded-For", firstClient)
+        .expect(200);
+      await request(getHttpServer())
+        .get("/v6/opportunities/summary")
+        .set("X-Forwarded-For", secondClient)
+        .expect(200);
+    }
+
+    await request(getHttpServer())
+      .get("/v6/opportunities/summary")
+      .set("X-Forwarded-For", firstClient)
+      .expect(429);
   });
 
   it("publishes the summary 200, 429, and 503 schemas in OpenAPI", () => {

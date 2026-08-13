@@ -1,4 +1,4 @@
-/** Defaults used to bound database work, summary load, and client shutdown. */
+/** Defaults used for proxy trust, database work, summary load, and shutdown. */
 export const RUNTIME_DEFAULTS = {
   databaseConnectTimeoutMs: 5000,
   databaseDisconnectTimeoutMs: 5000,
@@ -8,6 +8,7 @@ export const RUNTIME_DEFAULTS = {
   summaryRateLimit: 60,
   summaryRateTtlMs: 60000,
   summaryTimeoutMs: 12000,
+  trustProxyHops: 1,
 } as const;
 
 /** Validated non-secret process settings used by the API at runtime. */
@@ -20,6 +21,7 @@ export interface RuntimeConfiguration {
   summaryRateLimit: number;
   summaryRateTtlMs: number;
   summaryTimeoutMs: number;
+  trustProxyHops: number;
 }
 
 /**
@@ -48,8 +50,8 @@ function parsePositiveInteger(
 }
 
 /**
- * Loads bounded database, summary, cache, throttling, and shutdown settings
- * from the environment.
+ * Loads proxy, bounded database, summary, cache, throttling, and shutdown
+ * settings from the environment.
  *
  * @param environment Process-like environment map to validate.
  * @returns Validated runtime settings with documented defaults.
@@ -98,6 +100,11 @@ export function loadRuntimeConfiguration(
       environment.SUMMARY_TIMEOUT_MS,
       RUNTIME_DEFAULTS.summaryTimeoutMs,
       "SUMMARY_TIMEOUT_MS",
+    ),
+    trustProxyHops: parsePositiveInteger(
+      environment.TRUST_PROXY_HOPS,
+      RUNTIME_DEFAULTS.trustProxyHops,
+      "TRUST_PROXY_HOPS",
     ),
   };
 }

@@ -2,13 +2,17 @@ import "reflect-metadata";
 
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
+import { NestExpressApplication } from "@nestjs/platform-express";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import * as dotenv from "dotenv";
 
 import { AppModule } from "./app.module";
+import { loadRuntimeConfiguration } from "./config/runtime.config";
+import { configureTrustProxy } from "./config/trust-proxy.config";
 
 /**
- * Starts the Opportunities API with validation, CORS, and OpenAPI documentation.
+ * Starts the Opportunities API with validated proxy trust, request validation,
+ * CORS, and OpenAPI documentation.
  *
  * @returns A promise that resolves after the HTTP server starts listening.
  * @throws Propagates Nest application creation and listen failures.
@@ -16,9 +20,11 @@ import { AppModule } from "./app.module";
 async function bootstrap(): Promise<void> {
   dotenv.config();
 
-  const app = await NestFactory.create(AppModule);
+  const runtimeConfiguration = loadRuntimeConfiguration(process.env);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const prefix = process.env.API_PREFIX ?? "v6/opportunities";
 
+  configureTrustProxy(app, runtimeConfiguration.trustProxyHops);
   app.enableCors();
   app.enableShutdownHooks();
   app.setGlobalPrefix(prefix);
