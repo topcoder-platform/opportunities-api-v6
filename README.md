@@ -117,9 +117,11 @@ default is slightly above twice the per-statement default. Reducing it below
 `DATABASE_QUERY_TIMEOUT_MS` is valid when a stricter whole-request deadline is
 preferred.
 
-The dependencies target each API's `opportunities-v6` branch and Prisma-client
-package subdirectory. Once those branches are merged, pin production lockfiles
-to immutable commit SHAs while retaining the same `path:packages/...` selector.
+The Prisma-client dependencies retain their `path:packages/...` selectors and
+are pinned to the immutable merge commits that introduced the Opportunities
+contracts in Challenge, Engagements, Projects, and Review. When an owning
+client changes, update its commit deliberately and refresh the frozen lockfile;
+do not switch deployment builds back to a mutable branch reference.
 
 ## Local development
 
