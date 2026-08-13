@@ -36,16 +36,37 @@ export const RUNTIME_CONFIGURATION = Symbol("RUNTIME_CONFIGURATION");
 /** Factory contract supplied by the owning API Prisma packages. */
 export interface DatabaseClientFactories {
   /** Creates a caller-owned client for the Challenge API database. */
-  createChallengeClient(connectionString: string): ChallengePrismaClient;
+  createChallengeClient(
+    connectionString: string,
+    options?: DatabaseDriverFactoryOptions,
+  ): ChallengePrismaClient;
 
   /** Creates a caller-owned client for the Engagements API database. */
-  createEngagementsClient(connectionString: string): EngagementsPrismaClient;
+  createEngagementsClient(
+    connectionString: string,
+    options?: DatabaseDriverFactoryOptions,
+  ): EngagementsPrismaClient;
 
   /** Creates a caller-owned client for the Projects API database. */
-  createProjectsClient(connectionString: string): ProjectsPrismaClient;
+  createProjectsClient(
+    connectionString: string,
+    options?: DatabaseDriverFactoryOptions,
+  ): ProjectsPrismaClient;
 
   /** Creates a caller-owned client for the Review API database. */
   createReviewClient(connectionString: string): ReviewPrismaClient;
+}
+
+/** Bounded PostgreSQL driver settings supported by the Prisma 7 factories. */
+export interface DatabaseDriverOptions {
+  connectionTimeoutMillis: number;
+  query_timeout: number;
+  statement_timeout: number;
+}
+
+/** Factory wrapper used to keep adapter construction inside each owning API. */
+export interface DatabaseDriverFactoryOptions {
+  driverOptions: DatabaseDriverOptions;
 }
 
 interface DisconnectableClient {
@@ -80,6 +101,43 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
       },
     );
   });
+}
+
+/**
+ * Converts a millisecond deadline to the whole seconds required by Prisma 6
+ * PostgreSQL URL settings without shortening the configured deadline.
+ *
+ * @param timeoutMs Validated positive millisecond duration.
+ * @returns A positive whole-second duration rounded upward.
+ * @throws Does not throw.
+ */
+function toTimeoutSeconds(timeoutMs: number): string {
+  return Math.max(1, Math.ceil(timeoutMs / 1000)).toString();
+}
+
+/**
+ * Adds bounded Prisma 6 connection, pool-acquisition, and socket-query settings
+ * to the Review API database URL. Existing values are deliberately replaced by
+ * the validated service settings, and the resulting URL is never logged.
+ *
+ * @param connectionString Validated Review API PostgreSQL URL.
+ * @param connectTimeoutMs Connection and pool acquisition deadline.
+ * @param queryTimeoutMs Socket query deadline.
+ * @returns A URL retaining the original database, credentials, schema, and SSL
+ * settings with enforced timeout parameters.
+ * @throws TypeError when the supplied connection string is not a valid URL.
+ */
+function withReviewDatabaseTimeouts(
+  connectionString: string,
+  connectTimeoutMs: number,
+  queryTimeoutMs: number,
+): string {
+  const url = new URL(connectionString);
+  const connectTimeoutSeconds = toTimeoutSeconds(connectTimeoutMs);
+  url.searchParams.set("connect_timeout", connectTimeoutSeconds);
+  url.searchParams.set("pool_timeout", connectTimeoutSeconds);
+  url.searchParams.set("socket_timeout", toTimeoutSeconds(queryTimeoutMs));
+  return url.toString();
 }
 
 /**
@@ -147,21 +205,35 @@ export class DatabaseClientsService implements OnApplicationShutdown {
     private readonly runtimeConfiguration: RuntimeConfiguration,
   ) {
     const constructedClients: DisconnectableClient[] = [];
+    const driverOptions: DatabaseDriverOptions = {
+      connectionTimeoutMillis:
+        runtimeConfiguration.databaseConnectTimeoutMs,
+      query_timeout: runtimeConfiguration.databaseQueryTimeoutMs,
+      statement_timeout: runtimeConfiguration.databaseQueryTimeoutMs,
+    };
+    const factoryOptions: DatabaseDriverFactoryOptions = { driverOptions };
     try {
       this.challenge = factories.createChallengeClient(
         configuration.challengeDatabaseUrl,
+        factoryOptions,
       );
       constructedClients.push(this.challenge);
       this.engagements = factories.createEngagementsClient(
         configuration.engagementsDatabaseUrl,
+        factoryOptions,
       );
       constructedClients.push(this.engagements);
       this.projects = factories.createProjectsClient(
         configuration.projectsDatabaseUrl,
+        factoryOptions,
       );
       constructedClients.push(this.projects);
       this.review = factories.createReviewClient(
-        configuration.reviewDatabaseUrl,
+        withReviewDatabaseTimeouts(
+          configuration.reviewDatabaseUrl,
+          runtimeConfiguration.databaseConnectTimeoutMs,
+          runtimeConfiguration.databaseQueryTimeoutMs,
+        ),
       );
     } catch (error) {
       rollbackConstructedClients(

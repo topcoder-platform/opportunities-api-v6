@@ -43,9 +43,11 @@ The cell rules intentionally match anonymous discovery:
 - Reviews are `OPEN` review-opportunity rows attached to the same public,
   `ACTIVE` challenge set. Review payments are not part of the Figma cell.
 
-If any database read fails, the endpoint returns HTTP `503` with
-`Opportunity summary is temporarily unavailable.` It never converts a failed
-domain into a misleading zero or returns a partial summary.
+If any database read fails or the whole-summary deadline expires, the endpoint
+returns HTTP `503` with `Opportunity summary is temporarily unavailable.` It
+never converts a failed domain into a misleading zero or returns a partial
+summary. Failed or timed-out work is not cached, and the shared in-flight slot
+is released so a later request can retry.
 
 Successful summaries are cached in-process for 15 seconds by default, and
 concurrent cache misses share one in-flight query. The endpoint is also limited
@@ -70,20 +72,37 @@ Optional positive-integer runtime settings are:
 - `SUMMARY_JOIN_ROW_LIMIT` (default `10000`)
 - `SUMMARY_RATE_LIMIT` (default `60`)
 - `SUMMARY_RATE_TTL_MS` (default `60000`)
+- `SUMMARY_TIMEOUT_MS` (default `12000` for the complete aggregation)
+- `DATABASE_CONNECT_TIMEOUT_MS` (default `5000` per connection/acquisition)
+- `DATABASE_QUERY_TIMEOUT_MS` (default `5000` per database statement)
 - `DATABASE_DISCONNECT_TIMEOUT_MS` (default `5000` per client)
 
-All four values are required and validated before the server starts; errors
-name invalid variables without logging credentials. The external factories
-create one lazy Prisma client per process. Nest shutdown hooks disconnect all
-four pools in parallel on application shutdown, bounding each attempt by the
-configured timeout. If a later factory fails during startup, already-created
-clients receive the same bounded best-effort cleanup before startup fails.
+All four database URLs are required and validated before the server starts;
+errors name invalid variables without logging credentials. The external
+factories create one lazy Prisma client per process. The Prisma 7 challenge,
+engagements, and projects factories receive PostgreSQL `connectionTimeoutMillis`,
+client-side query timeout, and server-side statement timeout settings. The
+Prisma 6 review client receives equivalent `connect_timeout`, `pool_timeout`,
+and `socket_timeout` URL parameters in memory; the configured secret URL is not
+logged or rewritten on disk. The outer `SUMMARY_TIMEOUT_MS` deadline includes
+lazy connection work and both stages of the review visibility join, providing
+a final response-time bound if a driver is slow to settle.
+
+Nest shutdown hooks disconnect all four pools in parallel on application
+shutdown, bounding each attempt by the configured timeout. If a later factory
+fails during startup, already-created clients receive the same bounded
+best-effort cleanup before startup fails.
 
 The cross-database review visibility join reads at most
 `SUMMARY_JOIN_ROW_LIMIT + 1` lightweight review rows. Exceeding the configured
 limit fails the whole summary with `503` rather than returning a partial count
 or allowing unbounded memory use; raise it deliberately or investigate stale
 open opportunities if that operational guard is reached.
+
+Keep `SUMMARY_TIMEOUT_MS` high enough for the two sequential review stages; the
+default is slightly above twice the per-statement default. Reducing it below
+`DATABASE_QUERY_TIMEOUT_MS` is valid when a stricter whole-request deadline is
+preferred.
 
 The dependencies target each API's `opportunities-v6` branch and Prisma-client
 package subdirectory. Once those branches are merged, pin production lockfiles

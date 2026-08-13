@@ -8,11 +8,14 @@ import { DatabaseClientsService } from "../database/database-clients.service";
 import { OpportunitiesSummaryService } from "./opportunities-summary.service";
 
 const runtimeConfiguration = {
+  databaseConnectTimeoutMs: 5000,
   databaseDisconnectTimeoutMs: 5000,
+  databaseQueryTimeoutMs: 5000,
   summaryCacheTtlMs: 15000,
   summaryJoinRowLimit: 10000,
   summaryRateLimit: 60,
   summaryRateTtlMs: 60000,
+  summaryTimeoutMs: 12000,
 };
 
 const publicChallengeWhere = {
@@ -262,5 +265,57 @@ describe("OpportunitiesSummaryService", () => {
       }).getSummary(),
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
     expect(challengeFindMany).not.toHaveBeenCalled();
+  });
+
+  it("returns 503 on deadline and releases the pending cache slot for retry", async () => {
+    jest.useFakeTimers();
+    const logger = jest.spyOn(Logger.prototype, "error").mockImplementation();
+    const neverSettles = new Promise<number>(() => undefined);
+    const challengeCount = jest
+      .fn()
+      .mockReturnValueOnce(neverSettles)
+      .mockResolvedValueOnce(4);
+    const databases = {
+      challenge: {
+        challenge: {
+          aggregate: jest
+            .fn()
+            .mockResolvedValue({ _sum: { overviewTotalPrizes: 500 } }),
+          count: challengeCount,
+        },
+      },
+      engagements: { engagement: { count: jest.fn().mockResolvedValue(3) } },
+      projects: {
+        copilotOpportunity: { count: jest.fn().mockResolvedValue(2) },
+      },
+      review: {
+        reviewOpportunity: { findMany: jest.fn().mockResolvedValue([]) },
+      },
+    } as unknown as DatabaseClientsService;
+    const service = new OpportunitiesSummaryService(databases, {
+      ...runtimeConfiguration,
+      summaryTimeoutMs: 25,
+    });
+
+    const timedOut = expect(service.getSummary()).rejects.toEqual(
+      new ServiceUnavailableException(
+        "Opportunity summary is temporarily unavailable.",
+      ),
+    );
+    await jest.advanceTimersByTimeAsync(25);
+    await timedOut;
+
+    await expect(service.getSummary()).resolves.toMatchObject({
+      cells: {
+        competitions: { amount: 500, count: 4 },
+        engagements: { count: 3 },
+        copilots: { count: 2 },
+        reviews: { count: 0 },
+      },
+    });
+    expect(challengeCount).toHaveBeenCalledTimes(2);
+    expect(logger).toHaveBeenCalledWith(
+      "Unable to aggregate opportunity summary (SummaryDeadlineExceededError)",
+    );
   });
 });

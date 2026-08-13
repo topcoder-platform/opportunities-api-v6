@@ -15,11 +15,21 @@ describe("DatabaseClientsService", () => {
     reviewDatabaseUrl: "postgresql://u:p@review:5432/db",
   };
   const runtimeConfiguration: RuntimeConfiguration = {
+    databaseConnectTimeoutMs: 2000,
     databaseDisconnectTimeoutMs: 50,
+    databaseQueryTimeoutMs: 4000,
     summaryCacheTtlMs: 15000,
     summaryJoinRowLimit: 10000,
     summaryRateLimit: 60,
     summaryRateTtlMs: 60000,
+    summaryTimeoutMs: 12000,
+  };
+  const driverFactoryOptions = {
+    driverOptions: {
+      connectionTimeoutMillis: 2000,
+      query_timeout: 4000,
+      statement_timeout: 4000,
+    },
   };
 
   it("constructs each external client once with its owning URL", () => {
@@ -44,20 +54,52 @@ describe("DatabaseClientsService", () => {
 
     expect(factoryMocks.createChallengeClient).toHaveBeenCalledWith(
       configuration.challengeDatabaseUrl,
+      driverFactoryOptions,
     );
     expect(factoryMocks.createEngagementsClient).toHaveBeenCalledWith(
       configuration.engagementsDatabaseUrl,
+      driverFactoryOptions,
     );
     expect(factoryMocks.createProjectsClient).toHaveBeenCalledWith(
       configuration.projectsDatabaseUrl,
+      driverFactoryOptions,
     );
     expect(factoryMocks.createReviewClient).toHaveBeenCalledWith(
-      configuration.reviewDatabaseUrl,
+      "postgresql://u:p@review:5432/db?connect_timeout=2&pool_timeout=2&socket_timeout=4",
     );
     expect(service.challenge).toBe(clients[0]);
     expect(service.engagements).toBe(clients[1]);
     expect(service.projects).toBe(clients[2]);
     expect(service.review).toBe(clients[3]);
+  });
+
+  it("preserves review URL settings while enforcing Prisma 6 timeouts", () => {
+    const clients = [
+      { $disconnect: jest.fn() },
+      { $disconnect: jest.fn() },
+      { $disconnect: jest.fn() },
+      { $disconnect: jest.fn() },
+    ];
+    const factories = {
+      createChallengeClient: jest.fn().mockReturnValue(clients[0]),
+      createEngagementsClient: jest.fn().mockReturnValue(clients[1]),
+      createProjectsClient: jest.fn().mockReturnValue(clients[2]),
+      createReviewClient: jest.fn().mockReturnValue(clients[3]),
+    };
+
+    new DatabaseClientsService(
+      {
+        ...configuration,
+        reviewDatabaseUrl:
+          "postgresql://u:p@review:5432/db?schema=review&sslmode=require&connect_timeout=99",
+      },
+      factories,
+      runtimeConfiguration,
+    );
+
+    expect(factories.createReviewClient).toHaveBeenCalledWith(
+      "postgresql://u:p@review:5432/db?schema=review&sslmode=require&connect_timeout=2&pool_timeout=2&socket_timeout=4",
+    );
   });
 
   it("attempts every disconnect and resolves when one client rejects", async () => {

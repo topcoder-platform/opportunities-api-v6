@@ -40,6 +40,55 @@ function normalizeUsdAmount(value: number | null): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
+/** Error used internally when a whole-summary deadline expires. */
+class SummaryDeadlineExceededError extends Error {
+  constructor() {
+    super("Opportunity summary aggregation timed out.");
+    this.name = SummaryDeadlineExceededError.name;
+  }
+}
+
+/**
+ * Bounds a complete summary operation, including lazy connection acquisition
+ * and the sequential review-to-challenge visibility join.
+ *
+ * PostgreSQL driver and server timeouts terminate the underlying statements;
+ * this outer deadline guarantees a deterministic HTTP failure even if a client
+ * adapter does not settle promptly.
+ *
+ * @param operation In-flight uncached aggregation.
+ * @param timeoutMs Validated whole-summary deadline in milliseconds.
+ * @returns The operation result when it settles before the deadline.
+ * @throws SummaryDeadlineExceededError when the deadline expires, or the
+ * original operation error when it rejects first.
+ */
+function withSummaryDeadline<T>(
+  operation: Promise<T>,
+  timeoutMs: number,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new SummaryDeadlineExceededError()),
+      timeoutMs,
+    );
+    timer.unref();
+    operation.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error: unknown) => {
+        clearTimeout(timer);
+        reject(
+          error instanceof Error
+            ? error
+            : new Error("Opportunity summary aggregation failed."),
+        );
+      },
+    );
+  });
+}
+
 /**
  * Aggregates the four public Opportunities header cells from owning databases.
  *
@@ -59,7 +108,8 @@ export class OpportunitiesSummaryService {
    * Creates the summary service around process-owned database clients.
    *
    * @param databases Four Prisma clients managed by DatabaseClientsService.
-   * @param runtimeConfiguration Validated cache and join-bound settings.
+   * @param runtimeConfiguration Validated cache, join-bound, and deadline
+   * settings.
    * @throws Does not throw.
    */
   constructor(
@@ -109,86 +159,19 @@ export class OpportunitiesSummaryService {
   }
 
   /**
-   * Performs one uncached parallel aggregation across the four owning schemas.
+   * Applies the whole-summary deadline and converts all database/deadline
+   * failures into the stable public 503 contract.
    *
    * @returns Fresh timestamped four-cell content.
-   * @throws ServiceUnavailableException when any owning query fails.
+   * @throws ServiceUnavailableException when any owning query fails or the
+   * whole-summary deadline expires.
    */
   private async loadSummary(): Promise<OpportunitySummaryContentDto> {
     try {
-      const [
-        competitionCount,
-        prizeAggregate,
-        engagementCount,
-        copilotCount,
-        openReviews,
-      ] = await Promise.all([
-        this.databases.challenge.challenge.count({
-          where: PUBLIC_CHALLENGE_WHERE,
-        }),
-        this.databases.challenge.challenge.aggregate({
-          where: {
-            ...PUBLIC_CHALLENGE_WHERE,
-            overviewTotalPrizes: { gte: 0 },
-          },
-          _sum: { overviewTotalPrizes: true },
-        }),
-        this.databases.engagements.engagement.count({
-          where: {
-            isPrivate: false,
-            status: EngagementStatus.OPEN,
-          },
-        }),
-        this.databases.projects.copilotOpportunity.count({
-          where: {
-            deletedAt: null,
-            status: CopilotOpportunityStatus.active,
-          },
-        }),
-        this.databases.review.reviewOpportunity.findMany({
-          where: { status: ReviewOpportunityStatus.OPEN },
-          orderBy: { id: "asc" },
-          select: { challengeId: true, id: true },
-          take: this.runtimeConfiguration.summaryJoinRowLimit + 1,
-        }),
-      ]);
-
-      if (openReviews.length > this.runtimeConfiguration.summaryJoinRowLimit) {
-        throw new Error("ReviewOpportunityJoinLimitExceeded");
-      }
-      const reviewChallengeIds = [
-        ...new Set(openReviews.map((opportunity) => opportunity.challengeId)),
-      ];
-      const publicReviewChallenges = reviewChallengeIds.length
-        ? await this.databases.challenge.challenge.findMany({
-            where: {
-              ...PUBLIC_CHALLENGE_WHERE,
-              id: { in: reviewChallengeIds },
-            },
-            select: { id: true },
-          })
-        : [];
-      const publicChallengeIds = new Set(
-        publicReviewChallenges.map((challenge) => challenge.id),
+      return await withSummaryDeadline(
+        this.aggregateSummary(),
+        this.runtimeConfiguration.summaryTimeoutMs,
       );
-      const reviewCount = openReviews.reduce(
-        (count, opportunity) =>
-          count + (publicChallengeIds.has(opportunity.challengeId) ? 1 : 0),
-        0,
-      );
-
-      return {
-        cells: {
-          competitions: {
-            amount: normalizeUsdAmount(prizeAggregate._sum.overviewTotalPrizes),
-            count: competitionCount,
-          },
-          engagements: { count: engagementCount },
-          copilots: { count: copilotCount },
-          reviews: { count: reviewCount },
-        },
-        generatedAt: new Date().toISOString(),
-      };
     } catch (error) {
       const errorType = error instanceof Error ? error.name : "UnknownError";
       this.logger.error(
@@ -198,5 +181,90 @@ export class OpportunitiesSummaryService {
         "Opportunity summary is temporarily unavailable.",
       );
     }
+  }
+
+  /**
+   * Performs one uncached aggregation across the four owning schemas. The
+   * first five reads run concurrently; the review visibility join runs only
+   * after its bounded review rows are available.
+   *
+   * @returns Fresh timestamped four-cell content.
+   * @throws Owning Prisma client errors or the explicit review join-limit
+   * error. The caller converts them to the public 503 contract.
+   */
+  private async aggregateSummary(): Promise<OpportunitySummaryContentDto> {
+    const [
+      competitionCount,
+      prizeAggregate,
+      engagementCount,
+      copilotCount,
+      openReviews,
+    ] = await Promise.all([
+      this.databases.challenge.challenge.count({
+        where: PUBLIC_CHALLENGE_WHERE,
+      }),
+      this.databases.challenge.challenge.aggregate({
+        where: {
+          ...PUBLIC_CHALLENGE_WHERE,
+          overviewTotalPrizes: { gte: 0 },
+        },
+        _sum: { overviewTotalPrizes: true },
+      }),
+      this.databases.engagements.engagement.count({
+        where: {
+          isPrivate: false,
+          status: EngagementStatus.OPEN,
+        },
+      }),
+      this.databases.projects.copilotOpportunity.count({
+        where: {
+          deletedAt: null,
+          status: CopilotOpportunityStatus.active,
+        },
+      }),
+      this.databases.review.reviewOpportunity.findMany({
+        where: { status: ReviewOpportunityStatus.OPEN },
+        orderBy: { id: "asc" },
+        select: { challengeId: true, id: true },
+        take: this.runtimeConfiguration.summaryJoinRowLimit + 1,
+      }),
+    ]);
+
+    if (openReviews.length > this.runtimeConfiguration.summaryJoinRowLimit) {
+      throw new Error("ReviewOpportunityJoinLimitExceeded");
+    }
+    const reviewChallengeIds = [
+      ...new Set(openReviews.map((opportunity) => opportunity.challengeId)),
+    ];
+    const publicReviewChallenges = reviewChallengeIds.length
+      ? await this.databases.challenge.challenge.findMany({
+          where: {
+            ...PUBLIC_CHALLENGE_WHERE,
+            id: { in: reviewChallengeIds },
+          },
+          select: { id: true },
+        })
+      : [];
+    const publicChallengeIds = new Set(
+      publicReviewChallenges.map((challenge) => challenge.id),
+    );
+    const reviewCount = openReviews.reduce(
+      (count, opportunity) =>
+        count + (publicChallengeIds.has(opportunity.challengeId) ? 1 : 0),
+      0,
+    );
+
+    return {
+      cells: {
+        competitions: {
+          amount: normalizeUsdAmount(prizeAggregate._sum.overviewTotalPrizes),
+          count: competitionCount,
+        },
+        engagements: { count: engagementCount },
+        copilots: { count: copilotCount },
+        reviews: { count: reviewCount },
+      },
+      generatedAt: new Date().toISOString(),
+    };
   }
 }

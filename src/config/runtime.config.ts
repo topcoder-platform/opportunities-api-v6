@@ -1,19 +1,25 @@
-/** Defaults used to bound summary load and database-client shutdown. */
+/** Defaults used to bound database work, summary load, and client shutdown. */
 export const RUNTIME_DEFAULTS = {
+  databaseConnectTimeoutMs: 5000,
   databaseDisconnectTimeoutMs: 5000,
+  databaseQueryTimeoutMs: 5000,
   summaryCacheTtlMs: 15000,
   summaryJoinRowLimit: 10000,
   summaryRateLimit: 60,
   summaryRateTtlMs: 60000,
+  summaryTimeoutMs: 12000,
 } as const;
 
 /** Validated non-secret process settings used by the API at runtime. */
 export interface RuntimeConfiguration {
+  databaseConnectTimeoutMs: number;
   databaseDisconnectTimeoutMs: number;
+  databaseQueryTimeoutMs: number;
   summaryCacheTtlMs: number;
   summaryJoinRowLimit: number;
   summaryRateLimit: number;
   summaryRateTtlMs: number;
+  summaryTimeoutMs: number;
 }
 
 /**
@@ -42,7 +48,8 @@ function parsePositiveInteger(
 }
 
 /**
- * Loads bounded cache, throttling, and disconnect settings from the environment.
+ * Loads bounded database, summary, cache, throttling, and shutdown settings
+ * from the environment.
  *
  * @param environment Process-like environment map to validate.
  * @returns Validated runtime settings with documented defaults.
@@ -52,10 +59,20 @@ export function loadRuntimeConfiguration(
   environment: NodeJS.ProcessEnv,
 ): RuntimeConfiguration {
   return {
+    databaseConnectTimeoutMs: parsePositiveInteger(
+      environment.DATABASE_CONNECT_TIMEOUT_MS,
+      RUNTIME_DEFAULTS.databaseConnectTimeoutMs,
+      "DATABASE_CONNECT_TIMEOUT_MS",
+    ),
     databaseDisconnectTimeoutMs: parsePositiveInteger(
       environment.DATABASE_DISCONNECT_TIMEOUT_MS,
       RUNTIME_DEFAULTS.databaseDisconnectTimeoutMs,
       "DATABASE_DISCONNECT_TIMEOUT_MS",
+    ),
+    databaseQueryTimeoutMs: parsePositiveInteger(
+      environment.DATABASE_QUERY_TIMEOUT_MS,
+      RUNTIME_DEFAULTS.databaseQueryTimeoutMs,
+      "DATABASE_QUERY_TIMEOUT_MS",
     ),
     summaryCacheTtlMs: parsePositiveInteger(
       environment.SUMMARY_CACHE_TTL_MS,
@@ -76,6 +93,11 @@ export function loadRuntimeConfiguration(
       environment.SUMMARY_RATE_TTL_MS,
       RUNTIME_DEFAULTS.summaryRateTtlMs,
       "SUMMARY_RATE_TTL_MS",
+    ),
+    summaryTimeoutMs: parsePositiveInteger(
+      environment.SUMMARY_TIMEOUT_MS,
+      RUNTIME_DEFAULTS.summaryTimeoutMs,
+      "SUMMARY_TIMEOUT_MS",
     ),
   };
 }
