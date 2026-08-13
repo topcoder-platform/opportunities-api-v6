@@ -27,7 +27,7 @@ build_and_deploy_steps: &build_and_deploy_steps
   - run: *install_deploy_scripts
   - run:
       name: Validate and build image
-      command: docker buildx build --load --no-cache=true --platform linux/amd64 --tag "${APPNAME}:latest" .
+      command: docker buildx build --load --no-cache=true --platform linux/amd64 --provenance=false --tag "${APPNAME}:latest" .
   - deploy:
       name: Deploy to existing ECS service
       command: |

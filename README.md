@@ -164,7 +164,9 @@ CircleCI builds and deploys this service through the shared Topcoder deployment
 suite. Commits on `develop` select the AWS development account (`DEPLOY_ENV=DEV`),
 and commits on `master` select the AWS production account
 (`DEPLOY_ENV=PROD`). Both jobs build a `linux/amd64` image whose Docker build
-runs lint, unit tests, and compilation before deployment.
+runs lint, unit tests, and compilation before deployment. BuildKit provenance
+attestations are disabled so the image pushed to ECR is a single Docker
+manifest that ECR basic scanning supports, rather than an attested OCI index.
 
 The deployment reads configuration from Parameter Store without embedding
 credentials in the repository:
