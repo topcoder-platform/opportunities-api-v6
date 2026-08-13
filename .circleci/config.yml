@@ -1,0 +1,94 @@
+version: 2.1
+
+defaults: &defaults
+  docker:
+    - image: cimg/python:3.13.2-browsers
+
+install_dependencies: &install_dependencies
+  name: Install build and deployment dependencies
+  command: |
+    sudo apt update
+    sudo apt install -y jq python3-pip
+    sudo pip3 install awscli --upgrade
+
+install_deploy_scripts: &install_deploy_scripts
+  name: Install Topcoder deployment suite
+  command: |
+    git clone --depth 1 --branch v1.4.21 https://github.com/topcoder-platform/tc-deploy-scripts ../buildscript
+    cp ../buildscript/master_deploy.sh .
+    cp ../buildscript/buildenv.sh .
+    cp ../buildscript/awsconfiguration.sh .
+    cp ../buildscript/psvar-processor.sh .
+
+build_and_deploy_steps: &build_and_deploy_steps
+  - checkout
+  - setup_remote_docker
+  - run: *install_dependencies
+  - run: *install_deploy_scripts
+  - run:
+      name: Validate and build image
+      command: docker buildx build --load --no-cache=true --platform linux/amd64 --tag "${APPNAME}:latest" .
+  - deploy:
+      name: Deploy to existing ECS service
+      command: |
+        ./awsconfiguration.sh "$DEPLOY_ENV"
+        source awsenvconf
+        ./psvar-processor.sh -t appenv -p "/config/${APPNAME}/deployvar"
+        source deployvar_env
+
+        : "${AWS_ECS_CLUSTER:?Missing AWS_ECS_CLUSTER deployvar}"
+        : "${AWS_ECS_SERVICE:?Missing AWS_ECS_SERVICE deployvar}"
+        : "${AWS_REPOSITORY:?Missing AWS_REPOSITORY deployvar}"
+
+        service_status="$(aws ecs describe-services \
+          --cluster "$AWS_ECS_CLUSTER" \
+          --services "$AWS_ECS_SERVICE" \
+          --query 'services[0].status' \
+          --output text)"
+        if [ "$service_status" != "ACTIVE" ]; then
+          echo "ECS service ${AWS_ECS_SERVICE} must already exist and be ACTIVE in ${AWS_ECS_CLUSTER}."
+          exit 1
+        fi
+
+        aws ecr describe-repositories \
+          --repository-names "$AWS_REPOSITORY" \
+          --output json > /dev/null
+
+        ./master_deploy.sh \
+          -d ECS \
+          -e "$DEPLOY_ENV" \
+          -t latest \
+          -j "/config/${APPNAME}/appvar,/config/common/global-appvar" \
+          -i "$APPNAME" \
+          -p FARGATE
+
+jobs:
+  build-dev:
+    <<: *defaults
+    environment:
+      APPNAME: opportunities-api-v6
+      DEPLOY_ENV: DEV
+      LOGICAL_ENV: dev
+    steps: *build_and_deploy_steps
+
+  build-prod:
+    <<: *defaults
+    environment:
+      APPNAME: opportunities-api-v6
+      DEPLOY_ENV: PROD
+      LOGICAL_ENV: prod
+    steps: *build_and_deploy_steps
+
+workflows:
+  build-and-deploy:
+    jobs:
+      - build-dev:
+          context: org-global
+          filters:
+            branches:
+              only: develop
+      - build-prod:
+          context: org-global
+          filters:
+            branches:
+              only: master
