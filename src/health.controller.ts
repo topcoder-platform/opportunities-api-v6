@@ -1,13 +1,15 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Controller, Get } from "@nestjs/common";
+import { ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { SkipThrottle } from "@nestjs/throttler";
 
 export interface HealthResponse {
-  status: 'ok';
+  status: "ok";
 }
 
 /** Provides the process-level health check used by deployment probes. */
-@ApiTags('Health')
-@Controller('health')
+@ApiTags("Health")
+@Controller("health")
+@SkipThrottle({ summary: true })
 export class HealthController {
   /**
    * Reports that the HTTP process is accepting requests.
@@ -16,9 +18,9 @@ export class HealthController {
    * @throws Does not throw.
    */
   @Get()
-  @ApiOperation({ summary: 'Check process health' })
-  @ApiOkResponse({ schema: { example: { status: 'ok' } } })
+  @ApiOperation({ summary: "Check process health" })
+  @ApiOkResponse({ schema: { example: { status: "ok" } } })
   getHealth(): HealthResponse {
-    return { status: 'ok' };
+    return { status: "ok" };
   }
 }
