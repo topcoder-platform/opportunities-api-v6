@@ -1,6 +1,9 @@
 packages:
   - "."
 
+overrides:
+  "@nestjs/swagger>js-yaml": 5.2.2
+
 allowBuilds:
   "@nestjs/core": false
   "@prisma/client": true

@@ -145,6 +145,12 @@ to resolve source packages; it is absent from the final runtime image. The
 frozen lockfile resolves each source dependency to a verified HTTPS tarball and
 immutable commit. Refresh the lockfile whenever a source-client branch advances.
 
+The pnpm workspace applies an exact, dependency-edge-scoped override for
+`@nestjs/swagger>js-yaml` at `5.2.2`. This excludes vulnerable `js-yaml@5.2.1`
+from the production image while leaving unrelated tooling on its independently
+compatible major versions. Keep the override until Swagger's declared
+dependency resolves to a non-vulnerable release without it.
+
 ```bash
 docker build --tag topcoder/opportunities-api-v6:local .
 docker run --rm --env-file .env --publish 3000:3000 \
