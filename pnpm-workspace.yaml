@@ -3,6 +3,11 @@ packages:
 
 allowBuilds:
   "@nestjs/core": false
+  "@prisma/client": true
   "@scarf/scarf": false
   "@swc/core": true
+  "@topcoder/challenge-api-v6": false
+  "@topcoder/engagements-api-v6": false
+  "@topcoder/projects-api-v6": false
+  "@topcoder/review-api-v6-prisma-client": false
   unrs-resolver: true
