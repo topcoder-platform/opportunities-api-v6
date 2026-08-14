@@ -117,9 +117,11 @@ default is slightly above twice the per-statement default. Reducing it below
 `DATABASE_QUERY_TIMEOUT_MS` is valid when a stricter whole-request deadline is
 preferred.
 
-The dependencies target each API's `opportunities-v6` branch and Prisma-client
-package subdirectory. Once those branches are merged, pin production lockfiles
-to immutable commit SHAs while retaining the same `path:packages/...` selector.
+The Prisma-client dependencies retain their `path:packages/...` selectors and
+are pinned to the immutable merge commits that introduced the Opportunities
+contracts in Challenge, Engagements, Projects, and Review. When an owning
+client changes, update its commit deliberately and refresh the frozen lockfile;
+do not switch deployment builds back to a mutable branch reference.
 
 ## Local development
 
@@ -143,6 +145,12 @@ to resolve source packages; it is absent from the final runtime image. The
 frozen lockfile resolves each source dependency to a verified HTTPS tarball and
 immutable commit. Refresh the lockfile whenever a source-client branch advances.
 
+The pnpm workspace applies an exact, dependency-edge-scoped override for
+`@nestjs/swagger>js-yaml` at `5.2.2`. This excludes vulnerable `js-yaml@5.2.1`
+from the production image while leaving unrelated tooling on its independently
+compatible major versions. Keep the override until Swagger's declared
+dependency resolves to a non-vulnerable release without it.
+
 ```bash
 docker build --tag topcoder/opportunities-api-v6:local .
 docker run --rm --env-file .env --publish 3000:3000 \
@@ -155,3 +163,49 @@ the HTTP process; callers should use `GET /v6/opportunities/summary` to verify
 that all four database reads are available. When `API_PREFIX` is overridden,
 the deployment health-check path must be overridden at the orchestrator level
 to match it.
+
+## Continuous deployment
+
+CircleCI builds and deploys this service through the shared Topcoder deployment
+suite. Commits on `develop` select the AWS development account (`DEPLOY_ENV=DEV`),
+and commits on `master` select the AWS production account
+(`DEPLOY_ENV=PROD`). Both jobs build a `linux/amd64` image whose Docker build
+runs lint, unit tests, and compilation before deployment. BuildKit provenance
+attestations are disabled so the image pushed to ECR is a single Docker
+manifest that ECR basic scanning supports, rather than an attested OCI index.
+
+The deployment reads configuration from Parameter Store without embedding
+credentials in the repository:
+
+- `/config/opportunities-api-v6/deployvar` supplies deployment coordinates.
+- `/config/opportunities-api-v6/appvar` supplies service-specific task secrets.
+- `/config/common/global-appvar` supplies shared task secrets.
+
+Infrastructure must exist before CircleCI runs. The deployment preflight
+requires the configured ECR repository and an `ACTIVE` ECS service, then the
+shared suite publishes the new image, registers a new task-definition revision,
+and updates that service. It deliberately fails rather than allowing the suite
+to create missing infrastructure.
+
+The development deployment coordinates are
+`AWS_ECS_CLUSTER=tc-challenge-serverless` and
+`AWS_ECS_SERVICE=opportunities-api-v6`. The container, task family, and ECR
+repository should also use `opportunities-api-v6`. Each environment's
+`deployvar` path must provide the deployment suite's standard values:
+
+- `AWS_ECS_CLUSTER`
+- `AWS_ECS_CONTAINER_CPU`
+- `AWS_ECS_CONTAINER_MEMORY_RESERVATION`
+- `AWS_ECS_CONTAINER_NAME`
+- `AWS_ECS_FARGATE_CPU`
+- `AWS_ECS_FARGATE_MEMORY`
+- `AWS_ECS_PORTS` (normally `3000:3000:tcp`)
+- `AWS_ECS_READONLY_ROOTFILESYSTEM`
+- `AWS_ECS_SERVICE`
+- `AWS_ECS_TASK_FAMILY`
+- `AWS_REPOSITORY`
+- `COUNTER_LIMIT`
+
+The service-specific `appvar` path must provide the four required database URLs
+listed in Configuration and lifecycle. Optional runtime settings can be added
+there when an environment needs to override their documented defaults.
