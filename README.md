@@ -137,23 +137,17 @@ OpenAPI documentation is served from `/docs`, and
 
 ## Container deployment
 
-The production image is a multi-stage Alpine 3.24 build. Its runtime installs
-the distribution's `nodejs-current` package at Node 26.5.1 and pins the patched
-`libssl3` and `libcrypto3` packages at OpenSSL 3.5.8. This keeps Node dynamically
-linked to Alpine's patched OpenSSL libraries instead of shipping a second,
-bundled copy. The build verifies lint, unit tests, and compilation, then installs
-production-only dependencies into a clean stage and runs as the unprivileged
-`node` user. npm and Git are available only in the tooling stages used to
-install pnpm and resolve source packages; they are absent from the final runtime
-image. The frozen lockfile resolves each source dependency to a verified HTTPS
-tarball and immutable commit. Refresh the lockfile whenever a source-client
-branch advances.
+The production image uses digest-pinned Node 26.12.1 on Alpine 3.24 with
+patched distribution packages. The build verifies lint, tests, matcher
+compatibility and compilation. A separate stage installs production-only
+dependencies; the runtime uses the unprivileged `node` user and excludes Git,
+npm, Yarn and Corepack. The owning Prisma client commits and package selectors
+remain unchanged.
 
-The pnpm workspace applies an exact, dependency-edge-scoped override for
-`@nestjs/swagger>js-yaml` at `5.2.2`. This excludes vulnerable `js-yaml@5.2.1`
-from the production image while leaving unrelated tooling on its independently
-compatible major versions. Keep the override until Swagger's declared
-dependency resolves to a non-vulnerable release without it.
+The workspace overrides patched transitive dependencies and pins the shared
+Topcoder library to an immutable revision. Older tooling uses a tested adapter
+for the current minimatch API. Run `pnpm audit` and
+`pnpm test:dependency-compat` when refreshing the lockfile.
 
 ```bash
 docker build --tag topcoder/opportunities-api-v6:local .
