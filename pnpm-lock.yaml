@@ -30,7 +30,7 @@ overrides:
   piscina@^4: 4.9.4
   baseline-browser-mapping: 2.11.0
   browserslist: 4.28.8
-  tc-core-library-js: https://codeload.github.com/topcoder-platform/tc-core-library-js/tar.gz/a25576b8b038211d1ba910eca2d900271ba6659d
+  tc-core-library-js: https://codeload.github.com/topcoder-platform/tc-core-library-js/tar.gz/58de37670180e183e8378c3d203df0112a0414f6
 
 importers:
 
@@ -82,8 +82,8 @@ importers:
         specifier: ^7.8.2
         version: 7.8.2
       tc-core-library-js:
-        specifier: https://codeload.github.com/topcoder-platform/tc-core-library-js/tar.gz/a25576b8b038211d1ba910eca2d900271ba6659d
-        version: https://codeload.github.com/topcoder-platform/tc-core-library-js/tar.gz/a25576b8b038211d1ba910eca2d900271ba6659d(supports-color@8.1.1)
+        specifier: https://codeload.github.com/topcoder-platform/tc-core-library-js/tar.gz/58de37670180e183e8378c3d203df0112a0414f6
+        version: https://codeload.github.com/topcoder-platform/tc-core-library-js/tar.gz/58de37670180e183e8378c3d203df0112a0414f6(supports-color@8.1.1)
     devDependencies:
       '@eslint/js':
         specifier: ^9.39.5
@@ -3092,9 +3092,9 @@ packages:
     resolution: {integrity: sha512-uxc/zpqFg6x7C8vOE7lh6Lbda8eEL9zmVm/PLeTPBRhh1xCgdWaQ+J1CUieGpIfm2HdtsUpRv+HshiasBMcc6A==}
     engines: {node: '>=6'}
 
-  tc-core-library-js@https://codeload.github.com/topcoder-platform/tc-core-library-js/tar.gz/a25576b8b038211d1ba910eca2d900271ba6659d:
-    resolution: {tarball: https://codeload.github.com/topcoder-platform/tc-core-library-js/tar.gz/a25576b8b038211d1ba910eca2d900271ba6659d}
-    version: 4.0.0-rc.1
+  tc-core-library-js@https://codeload.github.com/topcoder-platform/tc-core-library-js/tar.gz/58de37670180e183e8378c3d203df0112a0414f6:
+    resolution: {tarball: https://codeload.github.com/topcoder-platform/tc-core-library-js/tar.gz/58de37670180e183e8378c3d203df0112a0414f6}
+    version: 4.0.0-rc.2
     engines: {node: '>=22.13'}
 
   terser-webpack-plugin@5.6.1:
@@ -6675,7 +6675,7 @@ snapshots:
 
   tapable@2.3.3: {}
 
-  tc-core-library-js@https://codeload.github.com/topcoder-platform/tc-core-library-js/tar.gz/a25576b8b038211d1ba910eca2d900271ba6659d(supports-color@8.1.1):
+  tc-core-library-js@https://codeload.github.com/topcoder-platform/tc-core-library-js/tar.gz/58de37670180e183e8378c3d203df0112a0414f6(supports-color@8.1.1):
     dependencies:
       '@types/jsonwebtoken': 9.0.10
       jsonwebtoken: 9.0.3
