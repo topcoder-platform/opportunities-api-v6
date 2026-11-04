@@ -10,7 +10,7 @@
   "service": "opportunities-api-v6",
   "taskFamily": "opportunities-api-v6",
   "circleciOrgId": "947bef5e-1669-415d-b83c-4fc85155b7df",
-  "circleciProjectId": null,
+  "circleciProjectId": "1197cd5e-dded-4376-920a-53d7b0715904",
   "repository": "github.com/topcoder-platform/opportunities-api-v6",
   "branch": "master",
   "images": {

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 2,
+  "environment": "dev",
+  "accountId": "811668436784",
+  "region": "us-east-1",
+  "deployRoleArn": "arn:aws:iam::811668436784:role/opportunities-api-v6-dev-deploy",
+  "taskRoleArn": "arn:aws:iam::811668436784:role/challenge-v5-container-role",
+  "executionRoleArn": "arn:aws:iam::811668436784:role/ecsTaskExecutionRole",
+  "cluster": "tc-challenge-serverless",
+  "service": "opportunities-api-v6",
+  "taskFamily": "opportunities-api-v6",
+  "circleciOrgId": "947bef5e-1669-415d-b83c-4fc85155b7df",
+  "circleciProjectId": "1197cd5e-dded-4376-920a-53d7b0715904",
+  "repository": "github.com/topcoder-platform/opportunities-api-v6",
+  "branch": "develop",
+  "images": {
+    "opportunities-api-v6": "opportunities-api-v6"
+  }
+}
