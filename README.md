@@ -137,19 +137,17 @@ OpenAPI documentation is served from `/docs`, and
 
 ## Container deployment
 
-The production image is a multi-stage Node 26 Alpine build. It verifies lint,
-unit tests, and compilation in the build stage, installs production-only
-dependencies into a clean stage, removes npm from the runtime image, and runs as
-the unprivileged `node` user. Git is available only in the tooling stages used
-to resolve source packages; it is absent from the final runtime image. The
-frozen lockfile resolves each source dependency to a verified HTTPS tarball and
-immutable commit. Refresh the lockfile whenever a source-client branch advances.
+The production image uses digest-pinned Node 26.12.1 on Alpine 3.24 with
+patched distribution packages. The build verifies lint, tests, matcher
+compatibility and compilation. A separate stage installs production-only
+dependencies; the runtime uses the unprivileged `node` user and excludes Git,
+npm, Yarn and Corepack. The owning Prisma client commits and package selectors
+remain unchanged.
 
-The pnpm workspace applies an exact, dependency-edge-scoped override for
-`@nestjs/swagger>js-yaml` at `5.2.2`. This excludes vulnerable `js-yaml@5.2.1`
-from the production image while leaving unrelated tooling on its independently
-compatible major versions. Keep the override until Swagger's declared
-dependency resolves to a non-vulnerable release without it.
+The workspace overrides patched transitive dependencies and pins the shared
+Topcoder library to an immutable revision. Older tooling uses a tested adapter
+for the current minimatch API. Run `pnpm audit` and
+`pnpm test:dependency-compat` when refreshing the lockfile.
 
 ```bash
 docker build --tag topcoder/opportunities-api-v6:local .
@@ -209,3 +207,28 @@ repository should also use `opportunities-api-v6`. Each environment's
 The service-specific `appvar` path must provide the four required database URLs
 listed in Configuration and lifecycle. Optional runtime settings can be added
 there when an environment needs to override their documented defaults.
+
+## Shared authentication and bus client (v6 refresh)
+
+This branch uses `tc-core-library-js` **4.0.0-rc.1**. Use its named
+`createJwtVerifier` / `createJwtAuthenticator`, `createM2MClient`, and
+`createBusApiClient` exports for shared authentication and bus API publishing.
+Service-specific roles, scopes, sessions and ownership checks remain in this service.
+The former bus wrapper dependency and local JWT cryptography must not be reintroduced.
+
+RSA verification requires an exact configured issuer and audience (`JWT_AUDIENCE`
+for client tokens, `AUTH0_AUDIENCE` for machine/API tokens, or this service's explicit
+issuer-policy settings). HMAC secrets must be at least 32 bytes; no default secret
+is supplied. Expiry is enforced. Machine identity comes from the shared verifier,
+not the presence of scopes. Supply real development credentials through the service's
+existing environment configuration before deployment.
+
+Bus publishers use `createBusApiClient(config).postEvent(event)` with the existing
+event envelope and optional key. Configure `BUSAPI_URL` for v6 and the existing
+OAuth credentials/token provider. The client uses bounded HTTPS requests and does
+not retry POSTs automatically. Application retry/outbox behavior remains local.
+
+See the [core migration guide](https://github.com/topcoder-platform/tc-core-library-js/blob/v4.0.0-rc.1/MIGRATION.md)
+for the API mapping, compatibility requirements, and rollout scope.
+
+This worker currently has no JWT verification or bus API publishing path; the shared dependency is pinned for consistency.
