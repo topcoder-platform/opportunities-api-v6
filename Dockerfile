@@ -1,12 +1,12 @@
 # syntax=docker/dockerfile:1.7
 
-ARG NODE_IMAGE=node:26.12.1-alpine3.24@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797
+ARG NODE_IMAGE=node:26.13.1-alpine3.24@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5
 ARG PNPM_VERSION=11.15.1
 
 FROM ${NODE_IMAGE} AS tooling
 ARG PNPM_VERSION
 RUN apk upgrade --no-cache \
-    && apk add --no-cache git \
+    && apk add --no-cache 'zlib>=1.4-r0' git \
     && npm install --global "pnpm@${PNPM_VERSION}"
 WORKDIR /usr/src/app
 
@@ -32,7 +32,7 @@ COPY tools ./tools
 RUN pnpm install --prod --frozen-lockfile
 
 FROM ${NODE_IMAGE} AS production
-RUN apk upgrade --no-cache \
+RUN apk upgrade --no-cache && apk add --no-cache 'zlib>=1.4-r0' \
     && rm -rf /usr/local/lib/node_modules /opt/yarn* /usr/local/include/node \
     && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
 ENV NODE_ENV=production
