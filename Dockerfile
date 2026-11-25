@@ -31,12 +31,13 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY tools ./tools
 RUN pnpm install --prod --frozen-lockfile
 
-FROM ${NODE_IMAGE} AS production
-RUN apk upgrade --no-cache && apk add --no-cache 'zlib>=1.4-r0' \
-    && rm -rf /usr/local/lib/node_modules /opt/yarn* /usr/local/include/node \
-    && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
+FROM alpine:3.24 AS production
 ENV NODE_ENV=production
 WORKDIR /usr/src/app
+RUN apk upgrade --no-cache \
+    && apk add --no-cache ca-certificates 'nodejs-current~26' 'nodejs-current>=26.13.1-r0' 'zlib>=1.4-r0' 'libcrypto3>=3.5.9-r1' 'libssl3>=3.5.9-r1' \
+    && addgroup -S -g 1000 node \
+    && adduser -S -D -u 1000 -G node node
 
 COPY --from=build --chown=node:node /usr/src/app/dist ./dist
 COPY --from=production-dependencies --chown=node:node /usr/src/app/node_modules ./node_modules
