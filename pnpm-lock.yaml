@@ -52,17 +52,17 @@ importers:
         specifier: 6.8.0
         version: 6.8.0(@nestjs/common@12.6.3(class-transformer@0.5.1)(class-validator@0.14.4)(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@8.1.1))(@nestjs/core@12.6.3)(reflect-metadata@0.2.2)
       '@topcoder/challenge-api-v6':
-        specifier: github:topcoder-platform/challenge-api-v6#8c2bc0d9e1e879bd750d160bd57a041496e075fb&path:packages/challenge-prisma-client
-        version: https://codeload.github.com/topcoder-platform/challenge-api-v6/tar.gz/8c2bc0d9e1e879bd750d160bd57a041496e075fb#path:packages/challenge-prisma-client
+        specifier: github:topcoder-platform/challenge-api-v6#4be7af7df425e836020428ca4ed317e120289de9&path:packages/challenge-prisma-client
+        version: https://codeload.github.com/topcoder-platform/challenge-api-v6/tar.gz/4be7af7df425e836020428ca4ed317e120289de9#path:packages/challenge-prisma-client
       '@topcoder/engagements-api-v6':
-        specifier: github:topcoder-platform/engagements-api-v6#dbace635cd68f708704871f16160659d72f22254&path:packages/engagements-prisma-client
-        version: https://codeload.github.com/topcoder-platform/engagements-api-v6/tar.gz/dbace635cd68f708704871f16160659d72f22254#path:packages/engagements-prisma-client
+        specifier: github:topcoder-platform/engagements-api-v6#5cd0025c909515abe384882ad8502bbcc62f2d2a&path:packages/engagements-prisma-client
+        version: https://codeload.github.com/topcoder-platform/engagements-api-v6/tar.gz/5cd0025c909515abe384882ad8502bbcc62f2d2a#path:packages/engagements-prisma-client
       '@topcoder/projects-api-v6':
-        specifier: github:topcoder-platform/projects-api-v6#c50b863fa98278e78fe0bcbb7509462f32335b4f&path:packages/projects-prisma-client
-        version: https://codeload.github.com/topcoder-platform/projects-api-v6/tar.gz/c50b863fa98278e78fe0bcbb7509462f32335b4f#path:packages/projects-prisma-client(@typescript/typescript6@6.0.2)
+        specifier: github:topcoder-platform/projects-api-v6#92e7e82fa170ad76d289850654f04192e88b5c4a&path:packages/projects-prisma-client
+        version: https://codeload.github.com/topcoder-platform/projects-api-v6/tar.gz/92e7e82fa170ad76d289850654f04192e88b5c4a#path:packages/projects-prisma-client(@typescript/typescript6@6.0.2)
       '@topcoder/review-api-v6-prisma-client':
-        specifier: github:topcoder-platform/review-api-v6#c4af473341d1c4e4dd8a38904931b83b2f9a4ddc&path:packages/review-prisma-client
-        version: https://codeload.github.com/topcoder-platform/review-api-v6/tar.gz/c4af473341d1c4e4dd8a38904931b83b2f9a4ddc#path:packages/review-prisma-client(@typescript/typescript6@6.0.2)
+        specifier: github:topcoder-platform/review-api-v6#b2bc7e10c987badc6cc40ea80bf177117181610c&path:packages/review-prisma-client
+        version: https://codeload.github.com/topcoder-platform/review-api-v6/tar.gz/b2bc7e10c987badc6cc40ea80bf177117181610c#path:packages/review-prisma-client(@typescript/typescript6@6.0.2)
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -1049,26 +1049,26 @@ packages:
   '@tokenizer/token@0.3.0':
     resolution: {integrity: sha512-OvjF+z51L3ov0OyAU0duzsYuvO01PH7x4t6DJx+guahgTnBHkhJdG7soQeTSFLWN3efnHyibZ4Z8l2EuWwJN3A==}
 
-  '@topcoder/challenge-api-v6@https://codeload.github.com/topcoder-platform/challenge-api-v6/tar.gz/8c2bc0d9e1e879bd750d160bd57a041496e075fb#path:packages/challenge-prisma-client':
-    resolution: {gitHosted: true, integrity: sha512-ryZa3tOJcT0DBbSwrLp4rnKDzhia/MnHrEi8kLfMhjyFmwy2NDjIGd3JGuBwzbWqmgp2PxrR3D1nnyP8XtF2tA==, path: packages/challenge-prisma-client, tarball: https://codeload.github.com/topcoder-platform/challenge-api-v6/tar.gz/8c2bc0d9e1e879bd750d160bd57a041496e075fb}
+  '@topcoder/challenge-api-v6@https://codeload.github.com/topcoder-platform/challenge-api-v6/tar.gz/4be7af7df425e836020428ca4ed317e120289de9#path:packages/challenge-prisma-client':
+    resolution: {gitHosted: true, integrity: sha512-LHkLNSwHTZ1tw4YSSmpgIIO5KG2I7MWtHfCcfRYAPICRqHmNDbi2xrYVeb18Z10RqMDWBs6rgl3iIu4Aa0L2ew==, path: packages/challenge-prisma-client, tarball: https://codeload.github.com/topcoder-platform/challenge-api-v6/tar.gz/4be7af7df425e836020428ca4ed317e120289de9}
     version: 1.0.0
     engines: {node: 26.x}
 
-  '@topcoder/engagements-api-v6@https://codeload.github.com/topcoder-platform/engagements-api-v6/tar.gz/dbace635cd68f708704871f16160659d72f22254#path:packages/engagements-prisma-client':
-    resolution: {gitHosted: true, integrity: sha512-+y0G4tFqBJ01N97HKOq0tVGT67WERrhhosxlyLIgC33zImxwFwaMx3PHPRP8YebgTTEaqNJFqoV2Egw+6CFd3w==, path: packages/engagements-prisma-client, tarball: https://codeload.github.com/topcoder-platform/engagements-api-v6/tar.gz/dbace635cd68f708704871f16160659d72f22254}
+  '@topcoder/engagements-api-v6@https://codeload.github.com/topcoder-platform/engagements-api-v6/tar.gz/5cd0025c909515abe384882ad8502bbcc62f2d2a#path:packages/engagements-prisma-client':
+    resolution: {gitHosted: true, integrity: sha512-7XE0GDDmuzX1Rp+ExDqqy8hA0NVZOnC/65raLgqV9MeiuT464Q4eeVEe4jaashXD+vYs7SKvo1a6rdPHd2u6KQ==, path: packages/engagements-prisma-client, tarball: https://codeload.github.com/topcoder-platform/engagements-api-v6/tar.gz/5cd0025c909515abe384882ad8502bbcc62f2d2a}
     version: 1.0.0
     engines: {node: '>=22.23.1'}
 
   '@topcoder/minimatch-compat@file:tools/minimatch-compat':
     resolution: {directory: tools/minimatch-compat, type: directory}
 
-  '@topcoder/projects-api-v6@https://codeload.github.com/topcoder-platform/projects-api-v6/tar.gz/c50b863fa98278e78fe0bcbb7509462f32335b4f#path:packages/projects-prisma-client':
-    resolution: {gitHosted: true, integrity: sha512-wfJtSWn3i2XuVOpfnRK3B/x8ZsZIGBwcrrCrcO+KJZdLiOP4H8eHPh9RZ2Vm6Ldsf4pbOX+CRmOMvjPxpFWgFw==, path: packages/projects-prisma-client, tarball: https://codeload.github.com/topcoder-platform/projects-api-v6/tar.gz/c50b863fa98278e78fe0bcbb7509462f32335b4f}
+  '@topcoder/projects-api-v6@https://codeload.github.com/topcoder-platform/projects-api-v6/tar.gz/92e7e82fa170ad76d289850654f04192e88b5c4a#path:packages/projects-prisma-client':
+    resolution: {gitHosted: true, integrity: sha512-ipu7fY8lnwAt/GVn8Ee0yIOQDo7kr67aoJuN6Hhg92o1x5aNz9ZqPF8PKyRcXq/AQZxIN43kLGtFVh5jm1hlrw==, path: packages/projects-prisma-client, tarball: https://codeload.github.com/topcoder-platform/projects-api-v6/tar.gz/92e7e82fa170ad76d289850654f04192e88b5c4a}
     version: 0.0.1
     engines: {node: 26.x}
 
-  '@topcoder/review-api-v6-prisma-client@https://codeload.github.com/topcoder-platform/review-api-v6/tar.gz/c4af473341d1c4e4dd8a38904931b83b2f9a4ddc#path:packages/review-prisma-client':
-    resolution: {gitHosted: true, integrity: sha512-sr79zfLvKZ7Hz53We32c50OABu+6/qWfgxXRlnuXnh0md4w64kA+5SxyCXYRw6uKzOKvbaxlZnjuP32p0P8yLA==, path: packages/review-prisma-client, tarball: https://codeload.github.com/topcoder-platform/review-api-v6/tar.gz/c4af473341d1c4e4dd8a38904931b83b2f9a4ddc}
+  '@topcoder/review-api-v6-prisma-client@https://codeload.github.com/topcoder-platform/review-api-v6/tar.gz/b2bc7e10c987badc6cc40ea80bf177117181610c#path:packages/review-prisma-client':
+    resolution: {gitHosted: true, integrity: sha512-IV9nA1oi4NMJGWMTI+SIKt67f7lbTeHCLqHlI1T37//UJMe6zbtIM1Mx+711vBigL4VELX0MaA6cNF7sP/dBvw==, path: packages/review-prisma-client, tarball: https://codeload.github.com/topcoder-platform/review-api-v6/tar.gz/b2bc7e10c987badc6cc40ea80bf177117181610c}
     version: 1.0.0
 
   '@tsconfig/node10@1.0.13':
@@ -4464,7 +4464,7 @@ snapshots:
 
   '@tokenizer/token@0.3.0': {}
 
-  '@topcoder/challenge-api-v6@https://codeload.github.com/topcoder-platform/challenge-api-v6/tar.gz/8c2bc0d9e1e879bd750d160bd57a041496e075fb#path:packages/challenge-prisma-client':
+  '@topcoder/challenge-api-v6@https://codeload.github.com/topcoder-platform/challenge-api-v6/tar.gz/4be7af7df425e836020428ca4ed317e120289de9#path:packages/challenge-prisma-client':
     dependencies:
       '@prisma/adapter-pg': 7.10.1
       '@prisma/client-runtime-utils': 7.10.1
@@ -4472,7 +4472,7 @@ snapshots:
     transitivePeerDependencies:
       - pg-native
 
-  '@topcoder/engagements-api-v6@https://codeload.github.com/topcoder-platform/engagements-api-v6/tar.gz/dbace635cd68f708704871f16160659d72f22254#path:packages/engagements-prisma-client':
+  '@topcoder/engagements-api-v6@https://codeload.github.com/topcoder-platform/engagements-api-v6/tar.gz/5cd0025c909515abe384882ad8502bbcc62f2d2a#path:packages/engagements-prisma-client':
     dependencies:
       '@prisma/adapter-pg': 7.10.1
       '@prisma/client-runtime-utils': 7.10.1
@@ -4484,7 +4484,7 @@ snapshots:
     dependencies:
       minimatch: 11.0.3
 
-  '@topcoder/projects-api-v6@https://codeload.github.com/topcoder-platform/projects-api-v6/tar.gz/c50b863fa98278e78fe0bcbb7509462f32335b4f#path:packages/projects-prisma-client(@typescript/typescript6@6.0.2)':
+  '@topcoder/projects-api-v6@https://codeload.github.com/topcoder-platform/projects-api-v6/tar.gz/92e7e82fa170ad76d289850654f04192e88b5c4a#path:packages/projects-prisma-client(@typescript/typescript6@6.0.2)':
     dependencies:
       '@prisma/adapter-pg': 7.10.1
       '@prisma/client': 7.10.1(@typescript/typescript6@6.0.2)
@@ -4494,7 +4494,7 @@ snapshots:
       - prisma
       - typescript
 
-  '@topcoder/review-api-v6-prisma-client@https://codeload.github.com/topcoder-platform/review-api-v6/tar.gz/c4af473341d1c4e4dd8a38904931b83b2f9a4ddc#path:packages/review-prisma-client(@typescript/typescript6@6.0.2)':
+  '@topcoder/review-api-v6-prisma-client@https://codeload.github.com/topcoder-platform/review-api-v6/tar.gz/b2bc7e10c987badc6cc40ea80bf177117181610c#path:packages/review-prisma-client(@typescript/typescript6@6.0.2)':
     dependencies:
       '@prisma/adapter-pg': 7.10.1
       '@prisma/client': 7.10.1(@typescript/typescript6@6.0.2)
