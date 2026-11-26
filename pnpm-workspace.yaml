@@ -1,5 +1,5 @@
 packages:
-- .
+  - .
 overrides:
   axios: 1.21.0
   brace-expansion@^1: 1.1.21
@@ -39,3 +39,8 @@ allowBuilds:
   '@topcoder/review-api-v6-prisma-client': false
   unrs-resolver: true
 blockExoticSubdeps: false
+minimumReleaseAgeExclude:
+  - '@nestjs/common@12.6.3'
+  - '@nestjs/core@12.6.3'
+  - '@nestjs/platform-express@12.6.3'
+  - '@nestjs/testing@12.6.3'

@@ -35,7 +35,7 @@ FROM alpine:3.24 AS production
 ENV NODE_ENV=production
 WORKDIR /usr/src/app
 RUN apk upgrade --no-cache \
-    && apk add --no-cache ca-certificates 'nodejs-current~26' 'nodejs-current>=26.13.1-r0' 'zlib>=1.4-r0' 'libcrypto3>=3.5.9-r1' 'libssl3>=3.5.9-r1' \
+    && apk add --no-cache ca-certificates 'nodejs-current~26.13.1' 'zlib>=1.4-r0' 'libcrypto3>=3.5.9-r1' 'libssl3>=3.5.9-r1' \
     && addgroup -S -g 1000 node \
     && adduser -S -D -u 1000 -G node node
 

@@ -137,7 +137,7 @@ OpenAPI documentation is served from `/docs`, and
 
 ## Container deployment
 
-The production image uses digest-pinned Node 26.12.1 on Alpine 3.24 with
+The production image uses digest-pinned Node 26.13.1 on Alpine 3.24 with
 patched distribution packages. The build verifies lint, tests, matcher
 compatibility and compilation. A separate stage installs production-only
 dependencies; the runtime uses the unprivileged `node` user and excludes Git,
